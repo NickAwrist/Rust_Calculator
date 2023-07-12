@@ -1,1 +1,7 @@
 /target
+/.idea
+.gitignore
+rust_calculator.iml
+misc.xml
+modules.xml
+vcs.xml
