@@ -264,7 +264,7 @@ fn evaluate_postfix(postfix :&String) -> f64 {
 
 fn main() {
 
-    println!("Welcome to a Rust implementation of a calculator in Rust!");
+    println!("Welcome to a Rust implementation of a calculator!");
     println!("How to use (a and b are arbitrary values):
     a*b for multiplication
     a/b for division
