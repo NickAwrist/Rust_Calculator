@@ -1,13 +1,13 @@
-use std::borrow::Borrow;
 use std::io;
 
 fn input() -> String{
     let mut input = String::new();
     println!("Enter an equation");
-    io::stdin().read_line(&mut input).expect("failed to readline");
+    io::stdin().read_line(&mut input).expect("Error: Input failed");
     return input;
 }
 
+// Checks if equation parenthesis are balanced
 fn parenthesis_check(equation :&String) -> bool{
 
     let mut stack:Vec<String> = Vec::new();
@@ -17,7 +17,7 @@ fn parenthesis_check(equation :&String) -> bool{
         if i == '(' {
             stack.push(i.to_string());
         }else if i == ')' {
-            if stack.pop().expect("Error") != "("  {
+            if stack.pop().expect("Error: Stack failed to pop") != "("  {
                 return false;
             }
         }
@@ -27,129 +27,141 @@ fn parenthesis_check(equation :&String) -> bool{
 }
 
 // Is our symbol addition, or subtraction
-fn is_add_or_sub(symbol :&String) -> bool {
-    return symbol == "+" || symbol == "-";
+fn is_add_or_sub(symbol :u8) -> bool {
+    return symbol == b'+' || symbol == b'-';
 }
 
 // Is our symbol multiplication, division, or modulo
-fn is_multi_or_div(symbol : &String) -> bool{
-    return symbol == "*" || symbol == "/" || symbol == "%";
+fn is_multi_or_div(symbol :u8) -> bool{
+    return symbol == b'*' || symbol == b'/' || symbol == b'%';
 }
 
 // Is our symbol a symbol at all
-fn is_symbol(symbol : &String) -> bool {
-    return is_multi_or_div(&symbol) || is_add_or_sub(&symbol) || symbol == "^";
+fn is_symbol(symbol :u8) -> bool {
+    return is_multi_or_div(symbol) || is_add_or_sub(symbol) || symbol == b'^' || symbol == b'!';
 }
 
 // Returns precedence level for different operators
-fn precedence_level(symbol :&String) -> u8 {
+fn precedence_level(symbol :u8) -> u8 {
 
-    if is_add_or_sub(&symbol){
+    if is_add_or_sub(symbol){
         return 1;
 
-    }else if is_multi_or_div(&symbol){
+    }else if is_multi_or_div(symbol){
         return 2;
 
-    }else if symbol == "^" {
+    }else if symbol == b'^' {
         return 3;
+
+    }else if symbol == b'!' {
+        return 4;
     }
 
-    return 4;
+    // Default
+    return 5;
 }
 
 // Pops all operators from the stack
-fn pop_operators(stack: &mut Vec<String>, postfix: &mut Vec<String>, symbol:&String) {
+fn pop_operators(stack: &mut Vec<u8>, postfix: &mut Vec<u8>, symbol:u8) {
 
-    while !stack.is_empty() && stack[stack.len()-1] != "("  && precedence_level(symbol) <= precedence_level(&stack[stack.len()-1]) {
-        postfix.push(stack.pop().expect("Error, not a string in stack")+" ");
+    while !stack.is_empty() && stack[stack.len()-1] != b'('  && precedence_level(symbol) <= precedence_level(stack[stack.len()-1]) {
+        postfix.push(stack.pop().expect("Error: Stack failed to pop"));
+        postfix.push(b' ');
     }
 }
 
 // Pops all values from the stack in between parenthesis
-fn pop_parenthesis(stack: &mut Vec<String>, postfix: &mut Vec<String>) {
+fn pop_parenthesis(stack: &mut Vec<u8>, postfix: &mut Vec<u8>) {
 
-    while !stack.is_empty() && stack[stack.len()-1] != "(" {
-        postfix.push(stack.pop().expect("Error, not a string in stack")+" ");
+    while !stack.is_empty() && stack[stack.len()-1] != b'(' {
+        postfix.push(stack.pop().unwrap());
+        postfix.push(b' ');
     }
-    if !stack.is_empty() && stack[stack.len()-1] == "(" {
+    if !stack.is_empty() && stack[stack.len()-1] == b'(' {
         stack.pop();
     }
 }
 
 // Infix expression to postfix expression
-fn infix_to_postfix(equation :&String) -> Vec<String> {
+fn infix_to_postfix(equation :&String) -> Vec<u8> {
 
     // Postfix and stack vectors
-    let mut postfix:Vec<String> = Vec::new();
-    let mut stack:Vec<String> = Vec::new();
+    let mut postfix:Vec<u8> = Vec::new();
+    let mut stack:Vec<u8> = Vec::new();
 
-    // Character array from equation string
-    let chars = equation.chars().collect::<Vec<char>>();
+    let equation_vec:Vec<u8> = equation.clone().into_bytes();
 
     // The current index we are at in char array
     let mut current_index:usize = 0;
 
+
+    let mut i:u8;
     // While we are in the char array
-    while current_index < chars.len() {
+    while current_index < equation_vec.len() {
 
-        // Get current char
-        let mut i:char = chars[current_index];
+        // Get current ascii
+        i = equation_vec[current_index];
 
-        // Get the symbol on the top of the stack (X is default value)
-        let mut top_stack_symbol = &"X".to_string();
+        // Get the symbol on the top of the stack (x is default value)
+        let mut top_stack_symbol:u8 = b'x';
 
         if !stack.is_empty(){
-            top_stack_symbol = stack.last().expect("Not a string");
+            top_stack_symbol = stack[stack.len() - 1];
         }
 
         // If our char is a digit, get all the following digits connected to it
-        if i.borrow().is_digit(10){
+        if i.is_ascii_digit(){
 
-            // Current digit we are at
-            let mut current_number:String = i.to_string();
+            postfix.push(i);
+            current_index = current_index + 1;
+            if current_index >= equation_vec.len() {
+                break;
+            }
+            i = equation_vec[current_index];
 
-            // While our current char is a digit, add it to current_number
-            while i.borrow().is_digit(10) {
+            // While our current char is a digit, add it to the postfix without spaces
+            while i.is_ascii_digit() {
+
+                postfix.push(i);
 
                 // Increment our current char and assign it to i
-                current_index = current_index.borrow() + 1;
-                if current_index >= chars.len() {
+                current_index = current_index + 1;
+                if current_index >= equation_vec.len() {
                     break;
                 }
-                i = chars[current_index];
+                i = equation_vec[current_index];
 
-                // If we incremented to not a digit, break
-                if !i.is_digit(10) {
-                    break;
-                }
-
-                // Add i to current_number
-                current_number.push_str(&*i.to_string());
             }
 
-            // Push current_number to the stack and end while loop iteration
-            postfix.push(current_number+" ");
-
+            // Push a space to separate the number
+            postfix.push(b' ');
             continue;
         }
 
         // If we have an open parenthesis, push it to the stack
-        if i == '(' {
-            stack.push(i.to_string());
+        if i == b'(' {
+            stack.push(i);
 
         // If our current value is an operator with higher precedence, add all operators to postfix and i to the stack
-        }else if !stack.is_empty() && precedence_level(&i.to_string()) <= precedence_level(&top_stack_symbol) {
-            pop_operators(&mut stack, &mut postfix, &i.to_string());
-            stack.push(i.to_string());
+        }else if !stack.is_empty() && precedence_level(i) <= precedence_level(top_stack_symbol) {
+            pop_operators(&mut stack, &mut postfix, i);
+            stack.push(i);
 
         // If we are at a closed parenthesis, add everything to the postfix up until an open parenthesis
-        }else if !stack.is_empty() && i == ')' {
+        }else if !stack.is_empty() && i == b')' {
             pop_parenthesis(&mut stack, &mut postfix);
 
         // If i is an operation, push it to the stack
-        } else if is_add_or_sub(&i.to_string()) || is_multi_or_div(&i.to_string()) || i == '^' {
-            stack.push(i.to_string());
+        } else if is_symbol(i) {
+            stack.push(i);
 
+        } else if i == b' ' || i == b'\n' || i == b'\t' {
+            current_index = current_index + 1;
+            continue;
+        }else {
+            // Error if any invalid symbols
+            println!("ERROR: Invalid Symbol {}", i as char);
+            return vec![0];
         }
 
         // Increment our current position in the char array
@@ -158,98 +170,155 @@ fn infix_to_postfix(equation :&String) -> Vec<String> {
 
     // Empty the rest of the stack into postfix
     while !stack.is_empty() {
-        postfix.push(stack.pop().expect("Error: Pop failed\n")+" ");
+        postfix.push(stack.pop().expect("Error, not a character in stack"));
+        postfix.push(b' ');
     }
 
     return postfix;
 }
 
 // Recursive exponent function
-fn pow(base :&f64, exponent :i64, positive :bool) -> f64 {
+fn pow(base :f64, exponent :i64, positive :bool) -> f64 {
     return if positive {
         if exponent <= 0 {
             1.0
         } else {
-            base * pow(&base, exponent - 1, positive)
+            base * pow(base, exponent - 1, positive)
         }
     } else {
-        1.0 / pow(&base, (-1)*exponent, !positive)
+        1.0 / pow(base, (-1)*exponent, true)
+    }
+}
+
+// Recursive factorial function
+fn factorial(base :f64) -> f64{
+    return if base == 0.0 {
+        1.0
+    } else {
+        base * factorial(base - 1.0)
     }
 }
 
 // Evaluates the postfix
-fn evaluate_postfix(postfix :&String) -> f64 {
+fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
+
+    // Check if invalid symbols
+    if postfix[0] == 0 {
+        return 0.0;
+    }
 
     // Stack vector
-    let mut stack:Vec<String> = Vec::new();
+    let mut stack:Vec<f64> = Vec::new();
 
     // Final value to return
     let final_value:f64;
-
-    // Char array from postfix string
-    let chars = postfix.chars().collect::<Vec<char>>();
 
     // Current index we are at in char array
     let mut current_index:usize = 0;
 
     // While we are in the char array
-    while current_index < chars.len() {
-        let mut i:char = chars[current_index];
+    while current_index < postfix.len() {
 
-        if i.borrow().is_digit(10){
+        // Grab the current char ASCII
+        let mut i: u8 = postfix[current_index];
 
-            // Current digit we are at
-            let mut current_number:String = i.to_string();
+        // If i is a digit, find out what number it is
+        if i.is_ascii_digit() {
 
-            // While our current char is a digit, add it to current_number
-            while i.borrow().is_digit(10) {
+            // Default 0
+            let mut value: f64 = 0.0;
 
-                // Increment our current char and assign it to i
-                current_index = current_index.borrow() + 1;
-                if current_index >= chars.len() {
+            // Current digit we are at (0-9)
+            let mut current_number: u8 = i - b'0';
+
+            // Add current digit to value with its corresponding base (12 = 1*10 + 2*1)
+            value = value * 10 as f64 + current_number as f64;
+
+            // Increment i
+            current_index = current_index + 1;
+            if current_index >= postfix.len() {
+                break;
+            }
+            i = postfix[current_index];
+
+            // While i is a digit
+            while i.is_ascii_digit() {
+
+                // Current digit we are at (0-9)
+                current_number = i - b'0';
+
+                // Add current digit to value with its corresponding base (12 = 1*10 + 2*1)
+                value = value * 10 as f64 + current_number as f64;
+
+                // Increment i
+                current_index = current_index + 1;
+                if current_index >= postfix.len() {
                     break;
                 }
-                i = chars[current_index];
-
-                // If we incremented to not a digit, break
-                if !i.is_digit(10) {
-                    break;
-                }
-
-                // Add i to current_number
-                current_number.push_str(&*i.to_string());
+                i = postfix[current_index];
             }
 
-            // Push the new number into the stack
-            stack.push(current_number.to_string());
+            // Push value to the stack
+            stack.push(value);
             continue;
-        }
 
         // If i is an operator
-        if is_symbol(&i.to_string()) {
+        }else if is_symbol(i) {
 
-            // Parse the top two values in stack into floats
-            let val1:f64 = stack.pop().expect("Error: Pop failed").trim().parse::<f64>().expect("Error: Parse failed");
-            let mut val2:f64 = stack.pop().expect("Error: Pop failed").trim().parse::<f64>().expect("Error: Parse failed");
+
+            // Default values for val1 and val2
+            let val1:f64;
+            let mut val2:f64 = 0.0;
+
+            // Grab the top two values from stack
+            let first_pop:Option<f64> = stack.pop();
+            let second_pop:Option<f64> = stack.pop();
+
+            // If the first pop is none, print an error and return 0.0
+            if first_pop == None {
+                println!("Error: No number found\n");
+                return 0.0;
+            }
+            else {
+                // Assign val1 to its respective value
+                val1 = first_pop.expect("Error: Stack failed to pop");
+
+                // If the second pop is not None, assign its respective value
+                if second_pop != None {
+                    val2 = second_pop.expect("Error: Stack failed to pop");
+                }
+            }
+
 
             // Use operators on the two values
-            if i == '*' {
-                val2 = val2 * val1;
-            }else if i == '/' {
-                val2 = val2 / val1;
-            }else if i == '+' {
-                val2 = val2 + val1;
-            }
-            else if i == '%' {
-                val2 = val2 % val1;
-            }else if i == '-' {
-                val2 = val2 - val1;
-            }else if i == '^' {
-                val2 = pow(&val2, val1 as i64, val1 > 0.0);
+            match i {
+                b'*'=>{
+                    val2 = (val2) * (val1);
+                },
+                b'/'=>{
+                    val2 = (val2) / (val1);
+                },
+                b'%'=>{
+                    val2 = (val2) % (val1);
+                },
+                b'+'=>{
+                    val2 = (val2) + (val1);
+                },
+                b'-'=>{
+                    val2 = (val2) - (val1);
+                },
+                b'^'=>{
+                    val2 = pow(val2, val1 as i64, val1 > 0.0);
+                },
+                b'!'=>{
+                    val2 = factorial(val1);
+                },
+                _ => println!("Error: Unknown operator in postfix")
+
             }
 
             // Push the new value into the stack
-            stack.push(val2.to_string());
+            stack.push(val2);
         }
 
         // Increment our position in the char array
@@ -257,45 +326,54 @@ fn evaluate_postfix(postfix :&String) -> f64 {
     }
 
     // Return last value in the stack
-    final_value = stack.pop().expect("Error: Pop failed").trim().parse::<f64>().expect("Error: Parse failed");
+    final_value = stack.pop().expect("Error: Stack failed to pop");
     return final_value;
 }
 
 
 fn main() {
 
-    println!("Welcome to a Rust implementation of a calculator!");
-    println!("How to use (a and b are arbitrary values):
-    a*b for multiplication
-    a/b for division
-    a%b for modulus
-    a+b for addition
-    a-b for subtraction
-    a^b for exponent
-    (0-a) for a negative number");
-
     // Get equation input
-    let equation = input();
+    let mut equation:String = String::new();
 
-    // If the parenthesis are balanced, evaluate the equation
-    if parenthesis_check(&equation) {
-        // Get postfix
-        let postfix:Vec<String> = infix_to_postfix(&equation);
 
-        // Turn postfix vector into a string
-        let mut postfix_string:String = String::new();
-        for i in postfix {
-            postfix_string = postfix_string + &*i.to_string();
+    while equation.trim().to_lowercase() != "Exit".trim().to_lowercase() {
+        println!("Welcome to a Rust implementation of a calculator!");
+        println!("How to use (a and b are arbitrary values):
+        a*b for multiplication
+        a/b for division
+        a%b for modulus
+        a+b for addition
+        a-b for subtraction
+        a^b for exponent
+        a!  for factorial
+        -a  for a negative number
+    Type 'Exit' to exit calculator");
+
+        equation = input();
+
+        if equation.trim().to_lowercase() == "Exit".trim().to_lowercase() {
+            break;
         }
 
-        // Evaluate the postfix
-        let final_value:f64 = evaluate_postfix(&postfix_string);
+        // If the parenthesis are balanced, evaluate the equation
+        if parenthesis_check(&equation) {
+            // Get postfix
+            let postfix: Vec<u8> = infix_to_postfix(&equation);
 
-        println!("{} = {}", equation.trim(), final_value);
+            // Evaluate the postfix
+            let final_value:f64 = evaluate_postfix(postfix);
+
+            println!("{} = {}\n", equation.trim(), final_value);
 
 
-    } else {
-        eprintln!("Equation has invalid parenthesis!!!");
-        return;
+        } else {
+            eprintln!("Equation has invalid parenthesis!!!");
+        }
+
     }
+
+    println!("Thank you!");
+
+
 }
