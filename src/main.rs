@@ -202,9 +202,8 @@ fn factorial(base :f64) -> f64{
 
 // Evaluates the postfix
 fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
-
     // Check if invalid symbols
-    if postfix[0] == 0 {
+    if postfix.is_empty() {
         return 0.0;
     }
 
@@ -225,7 +224,6 @@ fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
 
         // If i is a digit, find out what number it is
         if i.is_ascii_digit() {
-
             // Default 0
             let mut value: f64 = 0.0;
 
@@ -262,9 +260,9 @@ fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
             // Push value to the stack
             stack.push(value);
             continue;
-
+        }
         // If i is an operator
-        }else if is_symbol(i) {
+        if is_symbol(i) {
 
 
             // Default values for val1 and val2
@@ -305,9 +303,8 @@ fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
                 b'+'=>{
                     val2 = (val2) + (val1);
                 },
-                //FIX ME PLS
                 b'-'=>{
-                    val2 = (val2) - (val1);
+                    val2 = val2 - val1;
                 },
                 b'^'=>{
                     val2 = pow(val2, val1 as i64, val1 > 0.0);
@@ -350,7 +347,6 @@ fn main() {
         a-b for subtraction
         a^b for exponent
         a!  for factorial
-        -a  for a negative number
     Type 'Exit' to exit calculator");
 
         equation = input();
