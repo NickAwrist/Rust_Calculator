@@ -17,7 +17,8 @@ fn parenthesis_check(equation :&String) -> bool{
         if i == '(' {
             stack.push(i.to_string());
         }else if i == ')' {
-            if stack.pop().expect("Error: Stack failed to pop") != "("  {
+            let pop_val:Option<String> = stack.pop();
+            if pop_val == None || pop_val.clone().expect("Error: Stack failed to pop") != "("{
                 return false;
             }
         }
@@ -304,6 +305,7 @@ fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
                 b'+'=>{
                     val2 = (val2) + (val1);
                 },
+                //FIX ME PLS
                 b'-'=>{
                     val2 = (val2) - (val1);
                 },
@@ -311,6 +313,7 @@ fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
                     val2 = pow(val2, val1 as i64, val1 > 0.0);
                 },
                 b'!'=>{
+                    stack.push(val2);
                     val2 = factorial(val1);
                 },
                 _ => println!("Error: Unknown operator in postfix")
@@ -370,10 +373,7 @@ fn main() {
         } else {
             eprintln!("Equation has invalid parenthesis!!!");
         }
-
     }
 
     println!("Thank you!");
-
-
 }
