@@ -331,7 +331,6 @@ fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
                     val2 = factorial(val1);
                 },
                 _ => println!("Error: Unknown operator in postfix")
-
             }
 
             // Push the new value into the stack
