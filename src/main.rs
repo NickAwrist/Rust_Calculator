@@ -97,6 +97,8 @@ fn infix_to_postfix(equation :&String) -> Vec<u8> {
 
 
     let mut i:u8;
+
+    let mut last_was_symbol:bool = false;
     // While we are in the char array
     while current_index < equation_vec.len() {
 
@@ -136,11 +138,15 @@ fn infix_to_postfix(equation :&String) -> Vec<u8> {
 
             // Push a space to separate the number
             postfix.push(b' ');
+            last_was_symbol = false;
             continue;
         }
 
         // If we have an open parenthesis, push it to the stack
         if i == b'(' {
+            stack.push(i);
+
+        }else if i == b'-' && last_was_symbol {
             stack.push(i);
 
         // If our current value is an operator with higher precedence, add all operators to postfix and i to the stack
@@ -153,10 +159,11 @@ fn infix_to_postfix(equation :&String) -> Vec<u8> {
             pop_parenthesis(&mut stack, &mut postfix);
 
         // If i is an operation, push it to the stack
-        } else if is_symbol(i) {
+        }else if is_symbol(i) {
             stack.push(i);
+            last_was_symbol = true;
 
-        } else if i == b' ' || i == b'\n' || i == b'\t' {
+        }else if i == b' ' || i == b'\n' || i == b'\t' {
             current_index = current_index + 1;
             continue;
         }else {
@@ -202,6 +209,13 @@ fn factorial(base :f64) -> f64{
 
 // Evaluates the postfix
 fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
+
+    println!();
+    for i in &postfix {
+        print!("{}", *i as char);
+    }
+    println!();
+
     // Check if invalid symbols
     if postfix.is_empty() {
         return 0.0;
@@ -304,7 +318,10 @@ fn evaluate_postfix(postfix :Vec<u8>) -> f64 {
                     val2 = (val2) + (val1);
                 },
                 b'-'=>{
-                    val2 = val2 - val1;
+                    if stack.len()%2 == 0 {
+                        stack.push(val2);
+                    }
+                    val2 = -val1;
                 },
                 b'^'=>{
                     val2 = pow(val2, val1 as i64, val1 > 0.0);
@@ -347,6 +364,7 @@ fn main() {
         a-b for subtraction
         a^b for exponent
         a!  for factorial
+        (-a) for negative (limited)
     Type 'Exit' to exit calculator");
 
         equation = input();
